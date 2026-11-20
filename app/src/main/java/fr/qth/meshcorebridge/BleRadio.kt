@@ -9,6 +9,7 @@ import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
+import android.bluetooth.BluetoothStatusCodes
 import android.content.Context
 import android.os.Build
 import android.os.Handler
@@ -146,7 +147,7 @@ class BleRadio(
                 val d = tx.getDescriptor(CCCD)
                 if (d == null) { log("BLE : descripteur CCCD absent"); teardownAndRetry(); return@post }
                 val ok = if (Build.VERSION.SDK_INT >= 33) {
-                    g.writeDescriptor(d, BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE) == 0
+                    g.writeDescriptor(d, BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE) == BluetoothStatusCodes.SUCCESS
                 } else {
                     @Suppress("DEPRECATION") run {
                         d.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
@@ -225,7 +226,7 @@ class BleRadio(
         val noResp = ch.properties and BluetoothGattCharacteristic.PROPERTY_WRITE == 0
         val type = if (noResp) BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE else BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
         val ok = if (Build.VERSION.SDK_INT >= 33) {
-            g.writeCharacteristic(ch, frame, type) == 0
+            g.writeCharacteristic(ch, frame, type) == BluetoothStatusCodes.SUCCESS
         } else {
             @Suppress("DEPRECATION") run { ch.writeType = type; ch.value = frame; g.writeCharacteristic(ch) }
         }
