@@ -1,0 +1,19 @@
+MeshCore Bridge connects your MeshCore node (BLE companion firmware) to other apps and machines over TCP, as if they were plugged directly into the node.
+
+A MeshCore node accepts only one Bluetooth LE connection. With MeshCore Bridge, the official app, Home Assistant, your scripts or an MQTT gateway can all share that node by connecting to the relay.
+
+FEATURES
+• Bluetooth LE connection to the node (Nordic UART service), automatic reconnection, PIN pairing
+• Background TCP server, foreground service with notification, works with the screen off
+• Single-client mode, or multi-client mode (node responses are broadcast to every client)
+• Listens on 127.0.0.1 by default; optional local-network listening, with a warning
+• Configurable port, optional start at boot
+• Exportable log (direction, lengths and packet codes only, never message content)
+
+GOOD TO KNOW
+• The MeshCore protocol is designed for a single client: in multi-client mode every client also receives the responses meant for the others.
+• The TCP port is not authenticated. Only enable local-network listening on a network you trust.
+• On some phones (Xiaomi/HyperOS…), exempt the app from battery optimization and allow auto-start.
+
+Open source (MIT): https://github.com/QuickTrollHosted/meshcore-bridge
+No personal data is collected or transmitted.

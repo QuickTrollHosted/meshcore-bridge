@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MeshCore Bridge — Politique de confidentialité</title>
+<style>body{font-family:system-ui,sans-serif;max-width:46rem;margin:2rem auto;padding:0 1rem;line-height:1.55}</style></head>
+<body>
+<h1>MeshCore Bridge — Politique de confidentialité</h1>
+<p><em>Dernière mise à jour : 20 novembre 2026</em></p>
+
+<h2>Résumé</h2>
+<p>MeshCore Bridge ne collecte, ne stocke sur aucun serveur et ne transmet <strong>aucune donnée personnelle</strong>. Il n'y a ni compte, ni publicité, ni outil d'analyse, ni service tiers.</p>
+
+<h2>Ce que fait l'application</h2>
+<p>L'application relaie, sur votre appareil, les trames échangées entre votre nœud MeshCore (Bluetooth LE) et les clients TCP que vous choisissez de connecter (applications du téléphone ou, si vous l'activez, machines de votre réseau local). Le contenu de ces échanges (messages, contacts, commandes) transite par l'appareil mais n'est <strong>ni enregistré ni envoyé à l'éditeur</strong>.</p>
+
+<h2>Données conservées sur l'appareil</h2>
+<ul>
+<li>Vos réglages (nœud choisi, port, mode, PIN d'appairage saisi, options de démarrage).</li>
+<li>Un journal technique local (horodatage, sens, longueur et code de paquet, états de connexion). Il ne contient jamais le contenu des messages. Vous pouvez l'exporter et le partager volontairement ; il n'est jamais envoyé automatiquement.</li>
+</ul>
+<p>Ces données sont supprimées à la désinstallation de l'application.</p>
+
+<h2>Permissions</h2>
+<ul>
+<li><strong>Bluetooth (scan et connexion)</strong> : trouver et se connecter à votre nœud. Le scan n'est pas utilisé pour déterminer votre position.</li>
+<li><strong>Réseau, réseau local</strong> : serveur TCP local ; l'écoute sur le réseau local est désactivée par défaut.</li>
+<li><strong>Notifications, service au premier plan</strong> : maintenir le relais actif et vous en informer.</li>
+<li><strong>Démarrage du système</strong> : démarrage automatique optionnel.</li>
+</ul>
+
+<h2>Sécurité</h2>
+<p>Le port TCP n'est pas authentifié. Par défaut il n'écoute que sur l'appareil lui-même (127.0.0.1). Si vous activez l'écoute sur le réseau local, tout appareil de ce réseau peut communiquer avec votre nœud : à réserver aux réseaux de confiance.</p>
+
+<h2>Enfants, tiers, modifications</h2>
+<p>L'application n'est pas destinée aux enfants et ne partage rien avec des tiers. Toute modification de cette politique sera publiée à cette adresse.</p>
+
+<h2>Contact</h2>
+<p>Code source et signalement : <a href="https://github.com/QuickTrollHosted/meshcore-bridge">github.com/QuickTrollHosted/meshcore-bridge</a></p>
+<hr>
+<h1 lang="en">MeshCore Bridge — Privacy Policy</h1>
+<p lang="en">MeshCore Bridge collects, transmits and stores off-device <strong>no personal data</strong>. No account, ads, analytics or third-party services. It relays, on your device only, frames between your MeshCore node (Bluetooth LE) and the TCP clients you choose to connect; their content is neither recorded nor sent to the publisher. Only settings and a local technical log (direction, length, packet code — never message content) are kept on the device and removed on uninstall; the log is shared only if you export it. The TCP port is unauthenticated and listens on 127.0.0.1 by default; enabling local-network listening exposes your node to every device on that network. Source and contact: <a href="https://github.com/QuickTrollHosted/meshcore-bridge">github.com/QuickTrollHosted/meshcore-bridge</a>.</p>
+</body></html>

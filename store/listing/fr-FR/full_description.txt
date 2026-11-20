@@ -1,0 +1,19 @@
+MeshCore Bridge relie votre nœud MeshCore (firmware compagnon BLE) à d'autres applications et machines via TCP, comme s'ils étaient branchés directement au nœud.
+
+Un nœud MeshCore n'accepte qu'une seule connexion Bluetooth LE. Avec MeshCore Bridge, l'application officielle, Home Assistant, vos scripts ou une passerelle MQTT peuvent partager ce nœud en se connectant au relais.
+
+FONCTIONNALITÉS
+• Connexion Bluetooth LE au nœud (service Nordic UART), reconnexion automatique, appairage par PIN
+• Serveur TCP en arrière-plan, service au premier plan avec notification, actif écran éteint
+• Mode un seul client, ou mode multi-clients (les réponses du nœud sont diffusées à tous les clients)
+• Écoute sur 127.0.0.1 par défaut ; écoute sur le réseau local en option, avec avertissement
+• Port configurable, démarrage automatique au démarrage du téléphone (option)
+• Journal exportable (sens, longueurs et codes de paquet uniquement, jamais le contenu des messages)
+
+À SAVOIR
+• Le protocole MeshCore est conçu pour un seul client : en mode multi-clients, chaque client reçoit aussi les réponses destinées aux autres.
+• Le port TCP n'est pas authentifié. N'activez l'écoute réseau local que sur un réseau de confiance.
+• Sur certains téléphones (Xiaomi/HyperOS…), exemptez l'application de l'optimisation de batterie et autorisez le démarrage automatique.
+
+Application libre (licence MIT) : https://github.com/QuickTrollHosted/meshcore-bridge
+Aucune donnée personnelle n'est collectée ni transmise.
