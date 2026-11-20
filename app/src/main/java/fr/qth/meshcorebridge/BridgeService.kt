@@ -44,6 +44,7 @@ class BridgeService : Service() {
     private var counters = BridgeCounters()
     private var startedAt = 0L
     private var userStopped = false
+    private var listenAddress = ""
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -107,8 +108,8 @@ class BridgeService : Service() {
 
         val events = object : BridgeEvents {
             override fun log(message: String) = BridgeLog.i(message)
-            override fun onClientChanged(remote: String?) {
-                BridgeState.update { it.copy(clientRemote = remote) }
+            override fun onClientsChanged(clients: List<String>) {
+                BridgeState.update { it.copy(clients = clients) }
                 refreshNotification()
             }
             override fun onFrame(toRadio: Boolean, length: Int, code: Int) {
@@ -117,19 +118,29 @@ class BridgeService : Service() {
                 BridgeState.syncCounters(counters)
             }
         }
-        val ble = BleRadio(this, address, { st, detail ->
+        val pin = if (Prefs.autoPin(this)) Prefs.pin(this) else null
+        val ble = BleRadio(this, address, pin, { st, detail ->
             BridgeState.update { it.copy(ble = st, bleDetail = detail) }
             refreshNotification()
         }, BridgeLog::i).also { radio = it }
 
+        val port = Prefs.port(this)
+        var host = Prefs.host(this)
+        if (host == Prefs.ALL_INTERFACES && !LocalNetwork.isGranted(this)) {
+            BridgeLog.i("⚠ écoute LAN demandée mais permission réseau local refusée → repli sur ${Prefs.LOOPBACK}")
+            Alerts.relaunch(this, "Permission réseau local manquante : écoute limitée à 127.0.0.1")
+            host = Prefs.LOOPBACK
+        }
+        if (host == Prefs.ALL_INTERFACES) BridgeLog.i("⚠ écoute sur TOUTES les interfaces, sans authentification")
+        listenAddress = "$host:$port"
         try {
-            val srv = TcpBridgeServer(Prefs.HOST, Prefs.PORT, ble, events, counters).also { server = it }
+            val srv = TcpBridgeServer(host, port, Prefs.mode(this), ble, events, counters).also { server = it }
             srv.start()
         } catch (e: Exception) {
-            BridgeLog.i("impossible d'ouvrir ${Prefs.HOST}:${Prefs.PORT} : ${e.message}")
+            BridgeLog.i("impossible d'ouvrir $host:$port : ${e.message}")
             userStopped = true
             stopBridge(); Prefs.setShouldRun(this, false)
-            Alerts.relaunch(this, "Port ${Prefs.PORT} indisponible")
+            Alerts.relaunch(this, "Port $port indisponible")
             stopSelf(); return
         }
         ble.start()
@@ -141,7 +152,7 @@ class BridgeService : Service() {
                 if (n % 5 == 0) {
                     val s = BridgeState.status.value
                     val up = (System.currentTimeMillis() - startedAt) / 60_000
-                    BridgeLog.i("vivant depuis ${up} min — BLE ${s.ble.label}, client ${s.clientRemote ?: "aucun"}, ↑${s.bytesToRadio} o ↓${s.bytesFromRadio} o")
+                    BridgeLog.i("vivant depuis ${up} min — BLE ${s.ble.label}, ${s.clients.size} client(s), ↑${s.bytesToRadio} o ↓${s.bytesFromRadio} o")
                 }
                 n++
                 delay(60_000)
@@ -154,7 +165,7 @@ class BridgeService : Service() {
         radio?.stop(); radio = null
         scope?.cancel(); scope = null
         running = false
-        BridgeState.update { it.copy(serviceRunning = false, clientRemote = null) }
+        BridgeState.update { it.copy(serviceRunning = false, clients = emptyList()) }
     }
 
     private fun refreshNotification() {
@@ -164,7 +175,7 @@ class BridgeService : Service() {
 
     private fun statusText(): String {
         val s = BridgeState.status.value
-        return "BLE : ${s.ble.label} · TCP ${Prefs.HOST}:${Prefs.PORT} · client : ${if (s.clientRemote != null) "oui" else "non"}"
+        return "BLE : ${s.ble.label} · TCP $listenAddress · ${s.clients.size} client(s)"
     }
 
     private fun notification(text: String): Notification {

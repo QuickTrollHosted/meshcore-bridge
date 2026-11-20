@@ -10,7 +10,11 @@ import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
 import android.bluetooth.BluetoothStatusCodes
+import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import androidx.core.content.ContextCompat
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
@@ -32,6 +36,7 @@ private val CCCD: UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")
 class BleRadio(
     context: Context,
     private val address: String,
+    private val pin: String?,
     private val onState: (BleState, String) -> Unit,
     private val log: (String) -> Unit,
 ) : RadioPort {
@@ -57,11 +62,40 @@ class BleRadio(
 
     override fun setListener(listener: ((ByteArray) -> Unit)?) { this.listener = listener }
 
-    fun start() { main.post { stopped = false; connect() } }
+    /**
+     * Répond automatiquement à la demande de PIN d'appairage (défaut MeshCore : 123456) pour le nœud ciblé.
+     * Si la réponse échoue, la boîte de dialogue système reste utilisable.
+     */
+    private val pairingReceiver = object : BroadcastReceiver() {
+        override fun onReceive(c: Context, intent: Intent) {
+            val dev = if (Build.VERSION.SDK_INT >= 33) intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE, BluetoothDevice::class.java)
+            else @Suppress("DEPRECATION") intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE)
+            if (dev?.address != address || pin == null) return
+            val variant = intent.getIntExtra(BluetoothDevice.EXTRA_PAIRING_VARIANT, -1)
+            if (variant != BluetoothDevice.PAIRING_VARIANT_PIN) { log("BLE : appairage variante $variant (laissé au système)"); return }
+            val ok = try { dev.setPin(pin.toByteArray()) } catch (e: Exception) { log("BLE : setPin a échoué (${e.javaClass.simpleName})"); false }
+            log(if (ok) "BLE : PIN d'appairage envoyé automatiquement" else "BLE : PIN automatique refusé, saisie manuelle nécessaire")
+            if (ok) try { abortBroadcast() } catch (_: Exception) {}
+        }
+    }
+    private var pairingRegistered = false
+
+    fun start() {
+        main.post {
+            stopped = false
+            if (!pairingRegistered) {
+                val f = IntentFilter(BluetoothDevice.ACTION_PAIRING_REQUEST).apply { priority = IntentFilter.SYSTEM_HIGH_PRIORITY }
+                ContextCompat.registerReceiver(ctx, pairingReceiver, f, ContextCompat.RECEIVER_EXPORTED)
+                pairingRegistered = true
+            }
+            connect()
+        }
+    }
 
     fun stop() {
         main.post {
             stopped = true
+            if (pairingRegistered) { try { ctx.unregisterReceiver(pairingReceiver) } catch (_: Exception) {}; pairingRegistered = false }
             main.removeCallbacksAndMessages(null)
             closeGatt()
             onState(BleState.STOPPED, "")

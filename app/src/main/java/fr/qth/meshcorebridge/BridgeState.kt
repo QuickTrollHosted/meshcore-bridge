@@ -22,7 +22,7 @@ data class BridgeStatus(
     val serviceRunning: Boolean = false,
     val ble: BleState = BleState.STOPPED,
     val bleDetail: String = "",
-    val clientRemote: String? = null,
+    val clients: List<String> = emptyList(),
     val bytesToRadio: Long = 0,
     val bytesFromRadio: Long = 0,
     val framesToRadio: Long = 0,
@@ -75,6 +75,9 @@ object BridgeLog {
             f.appendText("${fileFmt.format(Date())} $msg\n")
         } catch (_: Exception) {}
     }
+
+    /** Copie complète du journal en mémoire (événements et trames), du plus ancien au plus récent. */
+    fun snapshot(): List<String> = _lines.value
 
     /** Trame : mémoire seulement. */
     @Synchronized fun frame(msg: String) = push(msg)
