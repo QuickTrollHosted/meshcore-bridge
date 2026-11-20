@@ -1,4 +1,4 @@
-# MeshCore Bridge (phase 0 — prototype de faisabilité)
+# MeshCore Bridge
 
 Relais Android entre un nœud **MeshCore** (firmware compagnon BLE) et des clients **TCP**
 qui parlent le protocole compagnon comme s'ils étaient branchés directement au nœud.
@@ -17,7 +17,7 @@ qui parlent le protocole compagnon comme s'ils étaient branchés directement au
 `MAX_FRAME_SIZE` vaut 176 dans le firmware actuel (le pont accepte jusqu'à 352 par marge).
 Le protocole est conçu pour **un seul client** : les réponses ne sont pas routées par client.
 
-## Phase 0
+## État actuel (prototype)
 
 - Un écran : choisir le nœud (scan BLE), démarrer / arrêter, journal (sens, longueur, code de paquet — jamais le contenu).
 - Service premier plan `connectedDevice`, TCP sur `127.0.0.1:5000`, **un seul client** (les suivants sont refusés).
@@ -43,3 +43,28 @@ python3 -m venv .local/venv && .local/venv/bin/pip install meshcore
 ```
 
 `tools/fake_node_tcp.py` simule le pont pour valider `tcp_probe.py` sans téléphone.
+
+## Installation et mise à jour (Obtainium)
+
+Distribution : **GitHub Releases uniquement** (pas de Play Store). Les APK sont signés par une clé propre au projet.
+
+1. Installer [Obtainium](https://github.com/ImranR98/Obtainium).
+2. « Ajouter une appli » → URL : `https://github.com/QuickTrollHosted/meshcore-bridge`.
+3. Tant que le dépôt est **privé**, renseigner dans les paramètres de la source GitHub d'Obtainium un jeton d'accès
+   (fine-grained, lecture seule du contenu de ce dépôt). Aucun jeton n'est nécessaire une fois le dépôt public.
+4. Obtainium proposera les mises à jour à chaque nouvelle release `vX.Y.Z`.
+
+Installation manuelle : télécharger `meshcore-bridge-vX.Y.Z.apk` depuis la page Releases.
+
+## CI/CD
+
+- Push et PR : build, lint, tests unitaires, APK debug en artefact (`.github/workflows/ci.yml`).
+- Tag `v*` : build release signé et GitHub Release avec notes générées (`.github/workflows/release.yml`).
+- `versionCode` = nombre de commits ; `versionName` = tag (`v0.1.0` → `0.1.0`), sinon `<dernier tag>-dev.<n>`.
+- Secrets du dépôt : `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD`.
+  Build signé en local : exporter `KEYSTORE_FILE`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD` puis `./gradlew :app:assembleRelease`.
+- Dependabot : Gradle et GitHub Actions, hebdomadaire.
+
+## Licence
+
+MIT.
