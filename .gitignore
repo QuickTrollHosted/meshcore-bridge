@@ -1,0 +1,13 @@
+# Éléments non versionnés (keystore, tokens, journaux, captures)
+.local/
+# Gradle / Android
+.gradle/
+build/
+local.properties
+*.iml
+.idea/
+.kotlin/
+*.apk
+*.aab
+*.jks
+*.keystore
