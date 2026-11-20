@@ -52,3 +52,59 @@ jobs:
         run: |
           gh release create "$GITHUB_REF_NAME" "meshcore-bridge-${GITHUB_REF_NAME}.apk" \
             --title "MeshCore Bridge ${GITHUB_REF_NAME}" --generate-notes --verify-tag
+
+  play:
+    # Publication Google Play (compte de service). Inactif tant que le secret PLAY_SERVICE_ACCOUNT_JSON est absent.
+    needs: release
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    env:
+      # Réglables sans toucher au code : Settings > Secrets and variables > Actions > Variables.
+      PLAY_TRACK: ${{ vars.PLAY_TRACK || 'internal' }}      # internal | alpha | beta | production
+      PLAY_STATUS: ${{ vars.PLAY_STATUS || 'draft' }}       # draft | completed
+      PLAY_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+    steps:
+      - name: Compte de service présent ?
+        id: gate
+        run: |
+          if [ -n "$PLAY_JSON" ]; then echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else echo "::notice::PLAY_SERVICE_ACCOUNT_JSON absent : publication Google Play ignorée"; fi
+      - uses: actions/checkout@v7
+        if: steps.gate.outputs.enabled == 'true'
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v8
+        if: steps.gate.outputs.enabled == 'true'
+        with:
+          name: meshcore-bridge-aab
+          path: aab
+      - name: Notes de version fr-FR
+        if: steps.gate.outputs.enabled == 'true'
+        run: |
+          mkdir -p whatsnew
+          # Message du tag annoté s'il existe, sinon sujets des commits utiles depuis le tag précédent.
+          NOTES=""
+          if [ "$(git cat-file -t "refs/tags/$GITHUB_REF_NAME")" = tag ]; then
+            NOTES=$(git for-each-ref "refs/tags/$GITHUB_REF_NAME" --format='%(contents)' | sed '/^-----BEGIN/,$d')
+          fi
+          if [ -z "$(echo "$NOTES" | tr -d '[:space:]')" ]; then
+            PREV=$(git describe --tags --abbrev=0 "$GITHUB_REF_NAME^" 2>/dev/null || true)
+            RANGE=${PREV:+$PREV..}$GITHUB_REF_NAME
+            NOTES=$(git log "$RANGE" --no-merges --pretty='%s' | grep -vE '^(ci|docs|chore|test|build)(\(.*\))?:' \
+              | sed -E 's/^[a-z]+(\([^)]*\))?!?: /• /' || true)
+          fi
+          [ -n "$(echo "$NOTES" | tr -d '[:space:]')" ] || NOTES="Améliorations et corrections."
+          printf '%s\n' "$NOTES" | head -c 480 > whatsnew/whatsnew-fr-FR
+          echo "--- notes ---"; cat whatsnew/whatsnew-fr-FR
+      - name: Publier sur Google Play
+        if: steps.gate.outputs.enabled == 'true'
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: fr.qth.meshcorebridge
+          releaseFiles: aab/*.aab
+          track: ${{ env.PLAY_TRACK }}
+          status: ${{ env.PLAY_STATUS }}
+          whatsNewDirectory: whatsnew
